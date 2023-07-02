@@ -3,32 +3,36 @@
 #include <queue>
 #include <stack>
 #include <limits>
+#include <utility>
 #include <algorithm>
+
 
 using namespace std;
 
-const int INF = numeric_limits<int>::max();
+int INF = numeric_limits<int>::max();
 
 // Function to add an edge between two nodes
 void addEdge(vector<vector<pair<int, int>>>& graph, int src, int dest, int weight) {
-    graph[src].push_back(make_pair(dest, weight));
-    graph[dest].push_back(make_pair(src, weight));
+    graph[src].push_back(make_pair(dest,weight));
+    graph[dest].push_back(make_pair(src,weight));
+
 }
 
-// Dijkstra's algorithm to find the shortest path
+// Dijkstra's algorithm to find the shortest fare path
 vector<int> dijkstra(const vector<vector<pair<int, int>>>& graph, int start, int destination) {
     int numNodes = graph.size();
     vector<int> distance(numNodes, INF); // Distance from start to each node
     vector<int> parent(numNodes, -1);    // Parent of each node in the shortest path
 
-    // Custom comparator for min heap based on distance
-    auto cmp = [](const pair<int, int>& a, const pair<int, int>& b) {
+    // Custom comparator for min heap based on fare
+    auto cmp = []( pair<int, int>& a,  pair<int, int>& b) {
         return a.second > b.second;
     };
 
     priority_queue<pair<int, int>, vector<pair<int, int>>, decltype(cmp)> pq(cmp);
     pq.push(make_pair(start, 0));
     distance[start] = 0;
+    int flag=0;
 
     while (!pq.empty()) {
         int currNode = pq.top().first;
@@ -39,9 +43,11 @@ vector<int> dijkstra(const vector<vector<pair<int, int>>>& graph, int start, int
             continue;
 
         if (currNode == destination)
-            break;
+        {
+            flag=1; break;
+        }
 
-        for (const auto& neighbor : graph[currNode]) {
+        for (auto neighbor : graph[currNode]) {
             int neighborId = neighbor.first;
             int edgeWeight = neighbor.second;
             int newDist = currDist + edgeWeight;
@@ -54,110 +60,108 @@ vector<int> dijkstra(const vector<vector<pair<int, int>>>& graph, int start, int
         }
     }
 
+
     // Reconstruct the shortest path
     vector<int> path;
-    int current = destination;
-    while (current != -1) {
+    if(flag==1){
+     cout<<"Least Fare is: Rs."<<distance[destination]<<"\n";
+     int current = destination;
+     while (current != -1) {
         path.push_back(current);
         current = parent[current];
-    }
-    reverse(path.begin(), path.end());
+     }
+    reverse(path.begin(), path.end());}
 
     return path;
 }
 
-// Depth-First Search to find the next shortest path
-void dfs(const vector<vector<pair<int, int>>>& graph, int start, int destination, int avoidRoad) {
-    vector<bool> visited(graph.size(), false);
-    stack<int> st;
-    st.push(start);
-    visited[start] = true;
-
-    while (!st.empty()) {
-        int current = st.top();
-        st.pop();
-
-        if (current == destination) {
-            cout << "Next Shortest Path: ";
-            while (!st.empty()) {
-                cout << st.top() << " ";
-                st.pop();
-            }
-            cout << destination << endl;
-            return;
-        }
-
-        for (const auto& neighbor : graph[current]) {
-            int neighborId = neighbor.first;
-            int edgeWeight = neighbor.second;
-
-            if (!visited[neighborId] && edgeWeight != INF && edgeWeight != avoidRoad) {
-                visited[neighborId] = true;
-                st.push(neighborId);
-            }
+//remove the avoided road
+void rem( vector<vector<pair<int, int>>>& graph, int s, int d) {
+    {
+        auto it=graph[s].begin();
+        for(auto neighbor: graph[s])
+        {
+            if(neighbor.first==d)
+                {graph[s].erase(it);break;}
+            it++;
         }
     }
-
-    cout << "No alternative path found." << endl;
 }
 
 
 // Function to print the map as a graph
-void printMap(const vector<vector<pair<int, int>>>& graph) {
+void printMap(vector<vector<pair<int, int>>>& graph) {
+
     int numNodes = graph.size();
     for (int i = 0; i < numNodes; ++i) {
-        cout << "Node " << i << ": ";
-        for (const auto& neighbor : graph[i]) {
-            cout << "(" << neighbor.first << ", " << neighbor.second << ") ";
+
+        for (auto neighbor : graph[i]) {
+            cout << "City " << i << ": ";
+            cout << "<--- Fare =" << neighbor.second << "---->" << neighbor.first <<"\n";
         }
         cout << endl;
     }
 }
 
-int main() {
+int main()
+{
     int numNodes, numEdges;
-    cout << "Enter the number of nodes in the map: ";
+    cout<<"-------WELCOME TO PERSONALIZED LOCAL BUS APP--------\n";
+    cout<<"Please Enter The Connecting Buses cites and roads"<<"\n";
+    cout << "Enter the number of cities in the map: ";
     cin >> numNodes;
-    cout << "Enter the number of edges in the map: ";
+    cout << "Enter the number of buses available: ";
     cin >> numEdges;
 
     vector<vector<pair<int, int>>> graph(numNodes);
 
     for (int i = 0; i < numEdges; ++i) {
         int src, dest, weight;
-        cout << "Enter edge " << i + 1 << " (source, destination, weight): ";
-        cin >> src >> dest >> weight;
+        cout << "Enter bus " << i + 1 << " (source, destination, Fare in rupees):";
+        cin>>src>>dest>>weight;
         addEdge(graph, src, dest, weight);
     }
 
     printMap(graph);
 
     int start, destination;
-    cout << "Enter the starting node: ";
+    cout << "Enter the starting city: ";
     cin >> start;
-    cout << "Enter the destination node: ";
+    cout << "Enter the destination city: ";
     cin >> destination;
 
     vector<int> shortestPath = dijkstra(graph, start, destination);
+    if (shortestPath.size()==0){cout<<"No Connecting buses";return(0);}
 
-    cout << "Shortest Path: ";
-    for (const auto& node : shortestPath) {
-        cout << node << " ";
+    cout << "Route with lowest fare";
+    for (auto node : shortestPath) {
+        cout <<"->" <<node ;
     }
     cout << endl;
 
-    cout << "Shortest Distance: " << shortestPath.size() - 1 << endl;
 
     char choice;
-    cout << "Do you want to avoid a specific road? (y/n): ";
+    cout << "Do you want to avoid a specific bus? (y/n): ";
     cin >> choice;
+    int asr,adest;
 
     if (choice == 'y' || choice == 'Y') {
-        int avoidRoad;
-        cout << "Enter the road weight you want to avoid: ";
-        cin >> avoidRoad;
-        dfs(graph, start, destination, avoidRoad);
+
+        cout << "Enter the bus  you want to avoid:(source,destination) ";
+        cin >> asr>>adest;
+
+        rem(graph,asr,adest);
+        vector<int> newshortestPath = dijkstra(graph, start, destination);
+        if(newshortestPath.size()==0){cout<<"No Alternative Route";return(0);}
+        cout << "Route with least Fare: ";
+        for (auto node1 : newshortestPath) {
+          cout <<"->"<<node1 ;
+    }
+    cout << endl;
+
+
     }
 
     return 0;
 }
+
